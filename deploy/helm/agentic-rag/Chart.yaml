@@ -1,0 +1,15 @@
+apiVersion: v2
+name: agentic-rag
+description: Production-Ready Agentic Document Intelligence RAG Platform on AWS EKS
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - agentic-rag
+  - bedrock
+  - pgvector
+  - langgraph
+  - eks
+maintainers:
+  - name: DevSecOps Platform Team
+    email: platform-team@example.com

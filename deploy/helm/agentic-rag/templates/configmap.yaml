@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "agentic-rag.fullname" . }}-config
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "agentic-rag.labels" . | nindent 4 }}
+data:
+  ENVIRONMENT: {{ .Values.global.environment | quote }}
+  AWS_REGION: {{ .Values.global.awsRegion | quote }}
+  LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+  BEDROCK_EMBEDDING_MODEL_ID: {{ .Values.config.bedrockEmbeddingModelId | quote }}
+  BEDROCK_GENERATION_MODEL_ID: {{ .Values.config.bedrockGenerationModelId | quote }}
+  BEDROCK_EMBEDDING_DIMENSION: {{ .Values.config.bedrockEmbeddingDimension | quote }}
+  S3_BUCKET_NAME: {{ .Values.config.s3BucketName | quote }}
+  SQS_QUEUE_URL: {{ .Values.config.sqsQueueUrl | quote }}
+  SQS_DLQ_URL: {{ .Values.config.sqsDlqUrl | quote }}
+  ASYNC_PROCESSING_MODE: {{ .Values.config.asyncProcessingMode | quote }}
+  STORAGE_BACKEND: {{ .Values.config.storageBackend | quote }}

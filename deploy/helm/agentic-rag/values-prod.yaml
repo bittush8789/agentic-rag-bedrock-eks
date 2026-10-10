@@ -1,0 +1,60 @@
+global:
+  environment: prod
+
+ingress:
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:123456789012:certificate/abcdef-1234
+    alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
+  hosts:
+    - host: rag.example.com
+      paths:
+        - path: /api/v1
+          pathType: Prefix
+          service: backend
+        - path: /
+          pathType: Prefix
+          service: frontend
+
+config:
+  logLevel: INFO
+  s3BucketName: "prod-agentic-rag-documents-123456789012"
+  sqsQueueUrl: "https://sqs.us-east-1.amazonaws.com/123456789012/prod-agentic-rag-ingestion-queue"
+  sqsDlqUrl: "https://sqs.us-east-1.amazonaws.com/123456789012/prod-agentic-rag-ingestion-dlq"
+
+frontend:
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+backend:
+  replicaCount: 4
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1024Mi
+    limits:
+      cpu: 2000m
+      memory: 2048Mi
+  hpa:
+    minReplicas: 4
+    maxReplicas: 20
+
+worker:
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1024Mi
+    limits:
+      cpu: 2000m
+      memory: 2048Mi
+  hpa:
+    minReplicas: 2
+    maxReplicas: 16

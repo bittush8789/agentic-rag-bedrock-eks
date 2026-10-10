@@ -1,0 +1,90 @@
+version: "3.8"
+
+services:
+  # 1. PostgreSQL 16 with pgvector extension
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: agentic-rag-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: agentic_rag
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d agentic_rag"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. FastAPI Backend Application
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: agentic-rag-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      ENVIRONMENT: dev
+      DATABASE_URL: postgresql+asyncpg://postgres:postgrespassword@postgres:5432/agentic_rag
+      STORAGE_BACKEND: local
+      LOCAL_STORAGE_DIR: /app/data/uploads
+      MOCK_BEDROCK: "True" # Set to False when AWS credentials are provided
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      BEDROCK_EMBEDDING_MODEL_ID: amazon.titan-embed-text-v2:0
+      BEDROCK_GENERATION_MODEL_ID: anthropic.claude-3-haiku-20240307-v1:0
+      BEDROCK_EMBEDDING_DIMENSION: 1024
+      ASYNC_PROCESSING_MODE: inline
+      LOG_LEVEL: INFO
+    volumes:
+      - uploads_data:/app/data/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # 3. Dedicated Asynchronous Ingestion Worker
+  worker:
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    container_name: agentic-rag-worker
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: dev
+      DATABASE_URL: postgresql+asyncpg://postgres:postgrespassword@postgres:5432/agentic_rag
+      STORAGE_BACKEND: local
+      LOCAL_STORAGE_DIR: /app/data/uploads
+      MOCK_BEDROCK: "True"
+      AWS_REGION: us-east-1
+      SQS_QUEUE_URL: ""
+      LOG_LEVEL: INFO
+    volumes:
+      - uploads_data:/app/data/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      backend:
+        condition: service_started
+
+  # 4. Frontend Nginx Web Client
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: agentic-rag-frontend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  uploads_data:

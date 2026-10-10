@@ -1,0 +1,84 @@
+name: Image Delivery & GitOps Deployment
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+
+permissions:
+  id-token: write   # Required for AWS OIDC authentication
+  contents: write   # Required for GitOps commit updates
+
+env:
+  AWS_REGION: us-east-1
+  OIDC_ROLE_ARN: arn:aws:iam::123456789012:role/github-actions-ecr-publisher
+  ECR_REGISTRY: 123456789012.dkr.ecr.us-east-1.amazonaws.com
+
+jobs:
+  build-and-publish:
+    name: Build, Tag & Publish to ECR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.OIDC_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          audience: sts.amazonaws.com
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set Image Tag
+        id: vars
+        run: |
+          IMAGE_TAG="sha-${GITHUB_SHA::8}"
+          echo "tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+
+      # Build and Push Backend
+      - name: Build and Push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/dev-agentic-rag-backend:${{ steps.vars.outputs.tag }}
+            ${{ env.ECR_REGISTRY }}/dev-agentic-rag-backend:latest
+
+      # Build and Push Worker
+      - name: Build and Push Worker
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./worker/Dockerfile
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/dev-agentic-rag-worker:${{ steps.vars.outputs.tag }}
+            ${{ env.ECR_REGISTRY }}/dev-agentic-rag-worker:latest
+
+      # Build and Push Frontend
+      - name: Build and Push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/dev-agentic-rag-frontend:${{ steps.vars.outputs.tag }}
+            ${{ env.ECR_REGISTRY }}/dev-agentic-rag-frontend:latest
+
+      # Update GitOps Configuration
+      - name: Update GitOps Helm Image Tag
+        run: |
+          NEW_TAG="${{ steps.vars.outputs.tag }}"
+          sed -i "s/tag: .*/tag: ${NEW_TAG}/g" deploy/helm/agentic-rag/values.yaml
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add deploy/helm/agentic-rag/values.yaml
+          git commit -m "chore(gitops): promote image tag to ${NEW_TAG} [skip ci]" || echo "No changes to commit"
+          git push

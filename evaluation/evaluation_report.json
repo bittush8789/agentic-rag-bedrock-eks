@@ -1,0 +1,39 @@
+{
+  "metrics": {
+    "average_latency_ms": 30.666666666666668,
+    "fact_recall_percent": 66.66666666666666,
+    "citation_accuracy_percent": 66.66666666666666
+  },
+  "results": [
+    {
+      "id": "eval-01",
+      "question": "Which models and dimensions are used for embeddings and generation in Bedrock?",
+      "latency_ms": 43,
+      "tokens": 120,
+      "keyword_recall": 1.0,
+      "citations_count": 1,
+      "citations_valid": true,
+      "answer_preview": "Based on **architecture_overview.txt** (page 1), here is what the documents state:\n\n> \"The platform utilizes AWS EKS wit..."
+    },
+    {
+      "id": "eval-02",
+      "question": "How is multi-tenant isolation enforced in the vector database?",
+      "latency_ms": 24,
+      "tokens": 120,
+      "keyword_recall": 1.0,
+      "citations_count": 1,
+      "citations_valid": true,
+      "answer_preview": "Based on **security_policy.txt** (page 1), here is what the documents state:\n\n> \"Tenant isolation is enforced on every v..."
+    },
+    {
+      "id": "eval-03",
+      "question": "What happens when a document ingestion job fails repeatedly?",
+      "latency_ms": 25,
+      "tokens": 0,
+      "keyword_recall": 0.0,
+      "citations_count": 0,
+      "citations_valid": false,
+      "answer_preview": "I could not find sufficient evidence in your uploaded documents to answer this question. Please ensure relevant document..."
+    }
+  ]
+}

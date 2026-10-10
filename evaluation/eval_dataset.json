@@ -1,0 +1,26 @@
+[
+  {
+    "id": "eval-01",
+    "document_filename": "architecture_overview.txt",
+    "document_text": "The platform utilizes AWS EKS with managed node groups across two Availability Zones. Amazon Bedrock provides Claude 3 Haiku for generation and Titan Text Embeddings V2 with 1024 dimensions. All original documents are stored encrypted in Amazon S3, and vector embeddings reside in Amazon RDS PostgreSQL using the pgvector extension.",
+    "question": "Which models and dimensions are used for embeddings and generation in Bedrock?",
+    "ground_truth": "Amazon Bedrock uses Titan Text Embeddings V2 with 1024 dimensions for embeddings, and Claude 3 Haiku for generation.",
+    "expected_keywords": ["titan", "1024", "claude 3 haiku"]
+  },
+  {
+    "id": "eval-02",
+    "document_filename": "security_policy.txt",
+    "document_text": "Tenant isolation is enforced on every vector similarity query using the X-Tenant-ID header. Documents and chunks are partitioned by tenant_id in PostgreSQL. Container images are stored in ECR with immutable tags and scanned with Trivy. Workloads authenticate with AWS services using EKS Pod Identity.",
+    "question": "How is multi-tenant isolation enforced in the vector database?",
+    "ground_truth": "Tenant isolation is enforced on every vector query by filtering using the X-Tenant-ID header, partitioning chunks and documents by tenant_id.",
+    "expected_keywords": ["tenant_id", "x-tenant-id", "partitioned"]
+  },
+  {
+    "id": "eval-03",
+    "document_filename": "ingestion_guide.txt",
+    "document_text": "Document ingestion operates asynchronously using Amazon SQS. When a file is uploaded, an ingestion job is created with status QUEUED. A dedicated Python worker polls SQS, extracts text using PyPDF, creates overlapping chunks, generates embeddings, and inserts them into pgvector. Failed jobs retry up to 3 times before routing to the dead-letter queue.",
+    "question": "What happens when a document ingestion job fails repeatedly?",
+    "ground_truth": "Failed ingestion jobs retry up to 3 times before being routed to the SQS dead-letter queue (DLQ).",
+    "expected_keywords": ["retry", "3 times", "dead-letter queue"]
+  }
+]

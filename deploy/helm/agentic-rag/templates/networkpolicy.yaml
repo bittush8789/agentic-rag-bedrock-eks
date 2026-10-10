@@ -1,0 +1,92 @@
+{{- if .Values.networkPolicy.enabled -}}
+# 1. Frontend NetworkPolicy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "agentic-rag.fullname" . }}-frontend-netpol
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app.kubernetes.io/component: frontend
+    {{- include "agentic-rag.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: frontend
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: {{ .Values.frontend.service.port }}
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: backend
+      ports:
+        - protocol: TCP
+          port: {{ .Values.backend.service.port }}
+    - ports:
+        - protocol: UDP
+          port: 53 # CoreDNS
+---
+# 2. Backend NetworkPolicy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "agentic-rag.fullname" . }}-backend-netpol
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app.kubernetes.io/component: backend
+    {{- include "agentic-rag.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: backend
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: frontend
+      ports:
+        - protocol: TCP
+          port: {{ .Values.backend.service.port }}
+  egress:
+    - ports:
+        - protocol: TCP
+          port: 5432 # RDS PostgreSQL
+        - protocol: TCP
+          port: 443  # AWS APIs (Bedrock, S3, SQS, Secrets Manager)
+        - protocol: UDP
+          port: 53   # CoreDNS
+---
+# 3. Worker NetworkPolicy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "agentic-rag.fullname" . }}-worker-netpol
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app.kubernetes.io/component: worker
+    {{- include "agentic-rag.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: worker
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress: [] # No incoming network connections allowed
+  egress:
+    - ports:
+        - protocol: TCP
+          port: 5432 # RDS PostgreSQL
+        - protocol: TCP
+          port: 443  # AWS APIs (Bedrock, S3, SQS, Secrets Manager)
+        - protocol: UDP
+          port: 53   # CoreDNS
+{{- end }}

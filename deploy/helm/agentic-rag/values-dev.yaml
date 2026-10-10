@@ -1,0 +1,32 @@
+global:
+  environment: dev
+
+ingress:
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+  certificateArn: ""
+  hosts:
+    - host: dev.rag.example.com
+      paths:
+        - path: /api/v1
+          pathType: Prefix
+          service: backend
+        - path: /
+          pathType: Prefix
+          service: frontend
+
+config:
+  logLevel: DEBUG
+  s3BucketName: "dev-agentic-rag-documents-123456789012"
+  sqsQueueUrl: "https://sqs.us-east-1.amazonaws.com/123456789012/dev-agentic-rag-ingestion-queue"
+  sqsDlqUrl: "https://sqs.us-east-1.amazonaws.com/123456789012/dev-agentic-rag-ingestion-dlq"
+
+frontend:
+  replicaCount: 2
+
+backend:
+  replicaCount: 2
+
+worker:
+  replicaCount: 1

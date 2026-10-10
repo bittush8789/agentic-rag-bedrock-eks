@@ -1,0 +1,117 @@
+global:
+  environment: dev
+  awsRegion: us-east-1
+  namespace: agentic-rag
+
+# Ingress Configuration (AWS Load Balancer Controller)
+ingress:
+  enabled: true
+  className: alb
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: '15'
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: '5'
+    alb.ingress.kubernetes.io/healthy-threshold-count: '2'
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: '2'
+  certificateArn: ""
+  hosts:
+    - host: ""
+      paths:
+        - path: /api/v1
+          pathType: Prefix
+          service: backend
+        - path: /
+          pathType: Prefix
+          service: frontend
+
+# Application Configuration
+config:
+  bedrockEmbeddingModelId: amazon.titan-embed-text-v2:0
+  bedrockGenerationModelId: anthropic.claude-3-haiku-20240307-v1:0
+  bedrockEmbeddingDimension: "1024"
+  s3BucketName: "dev-agentic-rag-documents"
+  sqsQueueUrl: "https://sqs.us-east-1.amazonaws.com/123456789012/dev-agentic-rag-ingestion-queue"
+  sqsDlqUrl: "https://sqs.us-east-1.amazonaws.com/123456789012/dev-agentic-rag-ingestion-dlq"
+  asyncProcessingMode: sqs
+  storageBackend: s3
+  logLevel: INFO
+  databaseUrlSecretName: agentic-rag-db-credentials
+
+# Frontend Deployment
+frontend:
+  replicaCount: 2
+  image:
+    repository: 123456789012.dkr.ecr.us-east-1.amazonaws.com/dev-agentic-rag-frontend
+    tag: v1.0.0
+    pullPolicy: IfNotPresent
+  service:
+    port: 8080
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+  hpa:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 75
+
+# FastAPI Backend Deployment
+backend:
+  replicaCount: 2
+  image:
+    repository: 123456789012.dkr.ecr.us-east-1.amazonaws.com/dev-agentic-rag-backend
+    tag: v1.0.0
+    pullPolicy: IfNotPresent
+  service:
+    port: 8000
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1024Mi
+  hpa:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  pdb:
+    enabled: true
+    minAvailable: 1
+
+# Ingestion Worker Deployment
+worker:
+  replicaCount: 2
+  image:
+    repository: 123456789012.dkr.ecr.us-east-1.amazonaws.com/dev-agentic-rag-worker
+    tag: v1.0.0
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1024Mi
+  hpa:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 8
+    targetCPUUtilizationPercentage: 75
+  pdb:
+    enabled: true
+    minAvailable: 1
+
+# Network Policies
+networkPolicy:
+  enabled: true

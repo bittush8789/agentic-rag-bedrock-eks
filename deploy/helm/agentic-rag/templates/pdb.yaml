@@ -1,0 +1,33 @@
+{{- if .Values.backend.pdb.enabled -}}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "agentic-rag.fullname" . }}-backend-pdb
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app.kubernetes.io/component: backend
+    {{- include "agentic-rag.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.backend.pdb.minAvailable }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: backend
+      {{- include "agentic-rag.selectorLabels" . | nindent 6 }}
+---
+{{- end }}
+{{- if .Values.worker.pdb.enabled -}}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "agentic-rag.fullname" . }}-worker-pdb
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app.kubernetes.io/component: worker
+    {{- include "agentic-rag.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.worker.pdb.minAvailable }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: worker
+      {{- include "agentic-rag.selectorLabels" . | nindent 6 }}
+{{- end }}

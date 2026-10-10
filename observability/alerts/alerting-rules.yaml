@@ -1,0 +1,52 @@
+groups:
+  - name: agentic-rag-service-alerts
+    rules:
+      - alert: FastAPI5xxRateHigh
+        expr: (sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m]))) * 100 > 1
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "FastAPI Backend 5xx Error Rate > 1%"
+          description: "High error rate detected in FastAPI service: {{ $value | printf \"%.2f\" }}% errors over 5 minutes."
+
+      - alert: FastAPIP95LatencyHigh
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 2.0
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "FastAPI P95 Latency > 2.0 seconds"
+          description: "95th percentile request latency exceeds 2.0 seconds: {{ $value | printf \"%.2f\" }}s."
+
+      - alert: SQSIngestionQueueDepthHigh
+        expr: aws_sqs_approximate_number_of_messages_visible{queue_name=~".*ingestion-queue"} > 100
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Ingestion queue depth backlog > 100 messages"
+          description: "Ingestion queue backlog has exceeded 100 pending documents for over 10 minutes. Check worker pod scaling."
+
+      - alert: SQSDeadLetterQueueMessagesPresent
+        expr: aws_sqs_approximate_number_of_messages_visible{queue_name=~".*ingestion-dlq"} > 0
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Messages present in SQS Dead-Letter Queue"
+          description: "Unprocessable or failing document ingestion jobs moved to DLQ. Operator intervention required."
+
+      - alert: DatabaseHighCPUUtilization
+        expr: aws_rds_cpuutilization_average > 85
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "RDS PostgreSQL CPU Utilization > 85%"
+          description: "Database instance CPU has exceeded 85% for 5 minutes. Check vector index query load or slow queries."

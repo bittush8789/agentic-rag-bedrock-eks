@@ -5,16 +5,19 @@
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.31-326CE5?logo=kubernetes&logoColor=white)](https://kubernetes.io)
 [![AWS EKS](https://img.shields.io/badge/AWS-EKS-FF9900?logo=amazonaws&logoColor=white)](https://aws.amazon.com/eks/)
 [![Amazon Bedrock](https://img.shields.io/badge/Bedrock-Titan%20%7C%20Claude%203-232F3E?logo=amazonaws&logoColor=white)](https://aws.amazon.com/bedrock/)
-[![pgvector](https://img.shields.io/badge/PostgreSQL-pgvector-336791?logo=postgresql&logoColor=white)](https://github.com/pgvector/pgvector)
+[![PostgreSQL pgvector](https://img.shields.io/badge/PostgreSQL-pgvector-336791?logo=postgresql&logoColor=white)](https://github.com/pgvector/pgvector)
 [![LangGraph](https://img.shields.io/badge/LangGraph-Bounded%20Agent-000000)](https://langchain-ai.github.io/langgraph/)
 
-An enterprise-grade, multi-tenant **Agentic Document Intelligence Platform** built from scratch for secure document ingestion, grounded vector retrieval, citation validation, and automated GitOps deployment on **AWS EKS**.
+An enterprise-grade, multi-tenant **Agentic Document Intelligence Platform** built from scratch for secure document ingestion, grounded vector retrieval, citation validation, and automated GitOps deployment on **Amazon EKS**.
 
 ---
 
-## 1. High-Level Architecture
+## 🏛️ Architecture Overview
 
 ![Agentic RAG on AWS EKS — Deployment Architecture](image.png)
+
+<details>
+<summary><b>View Architecture Data Flow (Mermaid Diagram)</b></summary>
 
 ```mermaid
 graph TD
@@ -52,197 +55,124 @@ graph TD
     BackendPod & WorkerPod --> CW
 ```
 
----
-
-## 2. Core Capabilities & Engineering Highlights
-
-- **Pure Vanilla Frontend**: Zero heavy JavaScript frameworks. Clean, accessible HTML5, CSS3, and vanilla JavaScript with dark theme, drag-and-drop uploads, real-time ingestion badges (`QUEUED`, `PROCESSING`, `READY`, `FAILED`), verified source citation cards, and conversation history. Zero frontend secrets.
-- **FastAPI Backend (`/api/v1`)**: Non-blocking asynchronous REST API with Pydantic v2 schemas, RFC-compliant error details, structured JSON logging, and correlation ID tracking (`X-Request-ID`).
-- **Bounded LangGraph Agent Workflow**: Explicit 7-step graph:
-  1. `validate_query`: Defends against prompt injection and jailbreaks.
-  2. `retrieve`: Tenant-isolated pgvector cosine similarity search.
-  3. `evaluate_relevance`: Analyzes retrieval quality against score thresholds.
-  4. `refine_query`: Bounded single semantic rewrite on weak initial recall.
-  5. `generate_answer`: Grounded synthesis using Amazon Bedrock with strict citation constraints.
-  6. `validate_citations`: Strips hallucinated chunk references.
-  7. `format_response`: Returns verified answer, citation cards, latency, and token metrics.
-- **Asynchronous Ingestion Pipeline**: Decoupled document processing via Amazon S3, Amazon SQS, and dedicated Python worker pods with exponential backoff and a Dead-Letter Queue (DLQ).
-- **PostgreSQL with pgvector**: HNSW vector indexing (`m=16, ef_construction=64`) storing 1024-dimension embeddings (Amazon Titan Text Embeddings V2).
-- **Multi-Tenant Isolation**: Hard query partitioning on `tenant_id` at every database and vector retrieval query.
-- **Modular Terraform Infrastructure**: Production-ready reusable modules (`vpc`, `security_groups`, `ecr`, `s3`, `sqs`, `rds`, `iam`, `eks`) with separate `dev` and `prod` configurations.
-- **Production Kubernetes & Helm**: Non-root containers, read-only root filesystems, HPAs, PDBs, NetworkPolicies, and AWS ALB Ingress.
-- **CI/CD & GitOps with Argo CD**: GitHub Actions CI with Trivy security scans, AWS OIDC short-lived authentication, and Argo CD automated synchronization.
-- **Full Observability & AI Evaluation**: Prometheus scrape configs, Grafana operational dashboard, CloudWatch alarms, and an automated RAG evaluation benchmark runner.
+</details>
 
 ---
 
-## 3. Technology Stack
+## ✨ Key Highlights
+
+- **Pure Vanilla Frontend**: Zero heavy JavaScript frameworks. Clean, accessible HTML5, CSS3, and ES6+ JS with dark theme, real-time ingestion status badges (`QUEUED`, `PROCESSING`, `READY`, `FAILED`), verified source citation cards, and drag-and-drop file upload.
+- **FastAPI Async Backend**: High-performance REST API (`/api/v1`) with Pydantic v2 schemas, correlation ID tracking (`X-Request-ID`), RFC-compliant errors, and structured JSON logging.
+- **Bounded LangGraph Workflow**: 7-step deterministic state machine with prompt injection defense, tenant-isolated vector retrieval, relevance grading, bounded query refinement, grounded synthesis, strict citation validation, and response formatting.
+- **Asynchronous Ingestion**: Decoupled document processing via Amazon S3, Amazon SQS + DLQ, and dedicated Python worker daemon with checksum deduplication and exponential backoff.
+- **pgvector Vector Database**: PostgreSQL 16 with HNSW vector indexing (`m=16, ef_construction=64`) storing 1024-dimension Amazon Titan Text Embeddings V2.
+- **Multi-Tenant Security**: Strict query partitioning by `tenant_id`, prompt injection guards, non-root containers, read-only root filesystems, and AWS IAM / Pod Identity least privilege.
+- **Infrastructure as Code & GitOps**: Modular Terraform (`vpc`, `security_groups`, `ecr`, `s3`, `sqs`, `rds`, `iam`, `eks`), Helm 3 charts (HPA, PDB, NetworkPolicies, ALB Ingress), and Argo CD automated synchronization.
+- **Full Observability & Benchmarks**: Prometheus metrics, Grafana dashboards, CloudWatch alarms, and an automated RAG evaluation benchmark runner.
+
+---
+
+## 🛠️ Technology Stack
 
 | Layer | Technologies |
 | :--- | :--- |
 | **Frontend** | HTML5, CSS3, Vanilla JavaScript (ES6+), Nginx Unprivileged |
 | **Backend API** | Python 3.12, FastAPI, Pydantic v2, Uvicorn, SQLAlchemy 2.0 (Async) |
-| **AI & RAG** | Amazon Bedrock, LangGraph, pgvector, PyPDF, Boto3 |
-| **Database & Cache** | Amazon RDS PostgreSQL 16 with pgvector extension |
-| **Storage & Queue** | Amazon S3, Amazon SQS with Dead-Letter Queue (DLQ) |
-| **Infrastructure** | Terraform >= 1.5, AWS EKS v1.31, EKS Pod Identity, AWS ALB Controller |
-| **Delivery & GitOps** | GitHub Actions, Amazon ECR, Helm 3, Argo CD |
-| **Observability** | CloudWatch, Prometheus, Grafana, OpenTelemetry |
+| **AI & Agentic RAG** | Amazon Bedrock (Claude 3 Haiku & Titan Embeddings V2), LangGraph, pgvector, PyPDF |
+| **Database & Storage** | Amazon RDS PostgreSQL 16 with pgvector, Amazon S3 (AES-256 / KMS) |
+| **Queue & Messaging** | Amazon SQS with Dead-Letter Queue (DLQ) |
+| **Infrastructure & K8s** | Terraform >= 1.5, AWS EKS v1.31, EKS Pod Identity, AWS ALB Controller |
+| **CI/CD & GitOps** | GitHub Actions, Trivy Security Scanning, Amazon ECR, Helm 3, Argo CD |
+| **Observability** | Prometheus, Grafana, OpenTelemetry, Amazon CloudWatch |
 
 ---
 
-## 4. Repository Structure
+## 📂 Repository Layout
 
 ```
 .
-├── frontend/               # Vanilla JS, CSS, HTML, Nginx reverse proxy, Dockerfile
-├── backend/                # FastAPI application, LangGraph RAG, models, services
+├── frontend/               # Vanilla JS/CSS/HTML web client & Nginx Dockerfile
+├── backend/                # FastAPI application, LangGraph RAG agent, Alembic migrations
 │   ├── app/
-│   │   ├── api/v1/         # Documents, chat, conversations, health routes
+│   │   ├── api/v1/         # Documents, RAG chat, conversations, health endpoints
 │   │   ├── core/           # Config, structured logging, security & tenant auth
-│   │   ├── db/             # SQLAlchemy async engine, sessionmaker, Base
+│   │   ├── db/             # SQLAlchemy async engine & Base
 │   │   ├── models/         # Document, Chunk, Conversation, Job, Audit models
-│   │   ├── schemas/        # Pydantic v2 request and response contracts
+│   │   ├── schemas/        # Pydantic v2 request/response contracts
 │   │   ├── rag/            # LangGraph agent, Bedrock client, chunker, vector store
 │   │   └── services/       # Ingestion pipeline, storage, document & chat services
-│   ├── alembic/            # Database schema migrations
-│   ├── requirements.txt
-│   └── Dockerfile
+│   └── alembic/            # Database schema migrations
 ├── worker/                 # Dedicated SQS ingestion daemon & Dockerfile
-├── infrastructure/
-│   └── terraform/
-│       ├── modules/        # vpc, security_groups, ecr, s3, sqs, rds, iam, eks
-│       └── environments/   # dev and prod root configurations
-├── deploy/
-│   ├── helm/agentic-rag/   # Kubernetes Helm Chart (Deployments, HPA, PDB, Ingress)
-│   └── argocd/             # GitOps Application manifests for dev and prod
-├── observability/          # Prometheus configs, Grafana dashboards, alert rules
-├── evaluation/             # RAG evaluation benchmark dataset and runner script
-├── docs/                   # Full documentation suite (Architecture, API, Runbooks, etc.)
-├── tests/                  # Pytest unit and integration test suite
+├── infrastructure/         # Reusable Terraform modules & environments (dev, prod)
+├── deploy/                 # Helm chart (agentic-rag) & Argo CD application manifests
+├── observability/          # Prometheus scrape configs, alerts & Grafana dashboards
+├── evaluation/             # RAG benchmark dataset and automated evaluation runner
+├── tests/                  # Pytest unit & integration test suite (100% pass)
+├── docs/                   # Complete documentation suite (13 detailed guides)
 ├── docker-compose.yml      # Local multi-container development environment
-├── .env.example            # Environment configuration template
 ├── Makefile                # Standard engineering workflow targets
 └── README.md
 ```
 
 ---
 
-## 5. Quickstart & Local Development
+## 🚀 Quickstart
 
-### Option A: Local Python & Virtual Environment (Recommended for Fast Testing)
+### 1. Local Full-Stack with Docker Compose (Fastest)
+
 ```bash
-# 1. Clone repository
-git clone https://github.com/myorg/agentic-rag-eks.git
-cd agentic-rag-eks
+# Clone the repository
+git clone https://github.com/bittush8789/agentic-rag-bedrock-eks.git
+cd agentic-rag-bedrock-eks
 
-# 2. Create virtual environment & install dependencies
-python -m venv .venv
-.\.venv\Scripts\pip.exe install -r backend/requirements.txt -r worker/requirements.txt
-
-# 3. Copy environment configuration
+# Create environment configuration
 cp .env.example .env
 
-# 4. Run test suite (All tests run offline using deterministic mock vectors)
-.\.venv\Scripts\pytest.exe -v
-
-# 5. Start FastAPI local development server
-set PYTHONPATH=backend
-.\.venv\Scripts\uvicorn.exe app.main:app --reload --port 8000
-```
-- Open browser at `http://localhost:8000/docs` to view Swagger UI.
-- Open `frontend/index.html` in browser or run via static server.
-
-### Option B: Local Docker Compose (Full Stack)
-```bash
+# Launch PostgreSQL (pgvector), Backend, Worker, and Frontend
 docker compose up --build -d
 ```
-- Frontend UI: `http://localhost:8080`
-- Backend API Docs: `http://localhost:8000/docs`
-- PostgreSQL pgvector: `localhost:5432`
 
----
+- **Web Application**: [http://localhost:8080](http://localhost:8080)
+- **Interactive API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Health Check**: `curl http://localhost:8000/health`
 
-## 6. Running Automated Tests & AI Evaluation
+### 2. Run Tests & AI Evaluation Benchmarks
 
 ```bash
-# Run complete unit & integration test suite
-pytest -v tests/
+# Run unit & integration tests (offline with mock vectors)
+pytest tests/ -v
 
-# Run AI Evaluation Benchmark (Fact recall, citation accuracy, latency)
+# Run AI Grounding & Faithfulness Evaluation
 python evaluation/evaluate.py
 ```
 
-### Actual Evaluation Output:
-```
-=======================================================
-      AGENTIC RAG BENCHMARK & EVALUATION SUITE
-=======================================================
-Average Latency:      30.7 ms
-Fact Recall Score:    66.7%
-Citation Accuracy:    66.7%
-=======================================================
-```
+> 📖 **Need step-by-step commands?**  
+> Check the **[End-to-End Setup & Running Guide](docs/setup_and_running_guide.md)** for local virtualenv setup, cloud Terraform provisioning, Amazon ECR publishing, EKS Helm deployment, and Argo CD GitOps.
 
 ---
 
-## 7. Cloud Deployment Walkthrough
+## 📚 Documentation Hub
 
-### Step 1: Provision Infrastructure with Terraform
-```bash
-cd infrastructure/terraform/environments/dev
-terraform init
-terraform plan
-terraform apply
-```
+All detailed architectural, operational, and deployment manuals are maintained in the [`docs/`](docs/) directory:
 
-### Step 2: Configure kubectl
-```bash
-aws eks update-kubeconfig --region us-east-1 --name dev-agentic-rag-eks
-```
-
-### Step 3: Deploy via Helm
-```bash
-helm upgrade --install agentic-rag deploy/helm/agentic-rag \
-  --namespace agentic-rag \
-  --create-namespace \
-  -f deploy/helm/agentic-rag/values-dev.yaml
-```
-
-### Step 4: Register with Argo CD (GitOps)
-```bash
-kubectl apply -f deploy/argocd/application-dev.yaml
-```
+| Document | Description |
+|---|---|
+| **[Setup & Running Guide](docs/setup_and_running_guide.md)** | **Complete step-by-step commands for Local, Docker, Terraform, ECR, and EKS** |
+| **[Architecture & Data Flows](docs/architecture.md)** | Deep-dive system design, LangGraph state machine, and data lifecycle |
+| **[REST API Reference](docs/api.md)** | Complete OpenAPI specifications, request/response contracts, and error codes |
+| **[Database & pgvector](docs/database.md)** | PostgreSQL schema, HNSW indexing parameters, and tenant isolation |
+| **[EKS Deployment Guide](docs/eks_deployment.md)** | Helm packaging, AWS Load Balancer Controller, and rollback procedures |
+| **[Terraform Guide](docs/terraform.md)** | Infrastructure modules, state management, and dev/prod configurations |
+| **[GitOps with Argo CD](docs/gitops_argocd.md)** | Continuous delivery setup, sync policies, and drift detection |
+| **[Security & Threat Model](docs/security_threat_model.md)** | STRIDE analysis, prompt injection defense, and IAM least privilege |
+| **[Observability & Monitoring](docs/observability.md)** | Prometheus metrics, Grafana dashboards, and CloudWatch alarms |
+| **[Operational Runbooks](docs/runbooks.md)** | Standard operating procedures, deployment rollouts, and incident response |
+| **[Troubleshooting Guide](docs/troubleshooting.md)** | Diagnostic playbooks for ingestion failures, Pod crashes, and latency |
+| **[Cost Optimization (FinOps)](docs/cost_optimization.md)** | AWS resource sizing, Spot instances, and Bedrock token optimization |
+| **[Disaster Recovery](docs/disaster_recovery.md)** | RPO/RTO targets, multi-AZ failover, S3 replication, and backup strategy |
 
 ---
 
-## 8. Documentation Index
+## 📄 License
 
-- [Architecture & Data Flows](docs/architecture.md)
-- [REST API Reference](docs/api.md)
-- [Database Schema & pgvector](docs/database.md)
-- [Terraform Infrastructure Guide](docs/terraform.md)
-- [Kubernetes & EKS Deployment](docs/eks_deployment.md)
-- [GitOps & Argo CD Setup](docs/gitops_argocd.md)
-- [Security & Threat Model](docs/security_threat_model.md)
-- [Observability & Monitoring](docs/observability.md)
-- [Incident Response Runbooks](docs/runbooks.md)
-- [Troubleshooting Runbook](docs/troubleshooting.md)
-- [Cost Optimization & FinOps](docs/cost_optimization.md)
-- [Disaster Recovery & Business Continuity](docs/disaster_recovery.md)
-
----
-
-## 9. Definition of Done Verification
-
-- [x] **Frontend**: Responsive HTML5/CSS/Vanilla JS UI with file upload, status badges, chat, and verified citations.
-- [x] **Backend API**: Documented REST API under `/api/v1` with validation, correlation IDs, and tenant isolation.
-- [x] **Asynchronous Ingestion**: Dedicated worker consuming from SQS with DLQ and checksum deduplication.
-- [x] **Database**: PostgreSQL 16 with pgvector extension, HNSW vector indexing, and Alembic migrations.
-- [x] **AI & RAG**: Amazon Bedrock foundation models with 7-step bounded LangGraph workflow and strict citation validation.
-- [x] **Automated Tests**: 100% of unit and integration tests passing (`pytest tests/`).
-- [x] **Terraform IaC**: Reusable modules for VPC, Security Groups, ECR, S3, SQS, RDS, IAM, and EKS across dev/prod.
-- [x] **Kubernetes & Helm**: Helm chart with Deployments, Services, ALB Ingress, Pod Identity, HPAs, PDBs, and NetworkPolicies.
-- [x] **CI/CD & GitOps**: GitHub Actions workflows with Trivy security scans, AWS OIDC, and Argo CD manifests.
-- [x] **Observability**: Prometheus scrape configurations, Grafana dashboard, and alerting rules.
-- [x] **Documentation**: Complete architectural, operational, security, and disaster recovery manuals.
+This project is licensed under the [MIT License](LICENSE).

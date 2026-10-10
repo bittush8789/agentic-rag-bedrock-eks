@@ -1,6 +1,6 @@
 # Production-Ready Agentic RAG Application on AWS EKS
 
-[![CI & Security Scanning](https://github.com/myorg/agentic-rag-eks/actions/workflows/ci.yaml/badge.svg)](https://github.com/myorg/agentic-rag-eks/actions/workflows/ci.yaml)
+[![CI & Security Scanning](https://github.com/bittush8789/agentic-rag-bedrock-eks/actions/workflows/ci.yaml/badge.svg)](https://github.com/bittush8789/agentic-rag-bedrock-eks/actions/workflows/ci.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.31-326CE5?logo=kubernetes&logoColor=white)](https://kubernetes.io)
 [![AWS EKS](https://img.shields.io/badge/AWS-EKS-FF9900?logo=amazonaws&logoColor=white)](https://aws.amazon.com/eks/)
@@ -13,6 +13,8 @@ An enterprise-grade, multi-tenant **Agentic Document Intelligence Platform** bui
 ---
 
 ## 1. High-Level Architecture
+
+![Agentic RAG on AWS EKS — Deployment Architecture](image.png)
 
 ```mermaid
 graph TD
